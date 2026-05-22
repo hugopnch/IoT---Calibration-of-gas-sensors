@@ -25,55 +25,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 HEADLESS = False
 OUTPUT_HTML = "measures_page.html"
 EXPORT_COOKIES = "cookies.json"
-# ------------------------------------------------
-# def make_driver(headless=False):
-#     from selenium.webdriver.chrome.options import Options
-#     from selenium.webdriver.chrome.service import Service
-#     import shutil
-#     import os
 
-#     # -------------------------------------------------------
-#     # ❗❗ IMPORTANT : mets ici le chemin exact vers chromedriver.exe 142
-#     DRIVER_PATH = r"C:\Users\titou\Desktop\UNICT\Python\data\data_meteo_station\chromedriver-win64\chromedriver-win64\chromedriver.exe"
-#     # -------------------------------------------------------
-
-#     if not os.path.exists(DRIVER_PATH):
-#         raise FileNotFoundError(f"ChromeDriver not found at: {DRIVER_PATH}")
-
-#     options = Options()
-
-#     # ----- Stable options for Chrome 142 -----
-#     options.add_argument("--disable-gpu")
-#     options.add_argument("--no-sandbox")
-#     options.add_argument("--disable-dev-shm-usage")
-#     options.add_argument("--disable-extensions")
-#     options.add_argument("--disable-popup-blocking")
-#     options.add_argument("--disable-infobars")
-#     options.add_argument("--disable-blink-features=AutomationControlled")
-#     options.add_argument("--disable-search-engine-choice-screen")
-#     options.add_argument("--start-maximized")
-
-#     if headless:
-#         options.add_argument("--headless=new")
-#         options.add_argument("--window-size=1920,1080")
-
-#     # ----- Remove 'Chrome is being controlled by automated test software' -----
-#     options.add_experimental_option("excludeSwitches", ["enable-automation"])
-#     options.add_experimental_option("useAutomationExtension", False)
-
-#     # ----- Create the driver -----
-#     service = Service(DRIVER_PATH)
-#     driver = webdriver.Chrome(service=service, options=options)
-
-#     # ----- Extra stealth -----
-#     driver.execute_cdp_cmd(
-#         "Page.addScriptToEvaluateOnNewDocument",
-#         {
-#             "source": """
-#             Object.defineProperty(navigator, 'webdriver', {
-#                 get: () => undefined
-#             });
-#       C:/Users/titou/Desktop/UNICT/Python/data/extensions_files/data_checkgrazia_20251121_090823/rabbit_to_add/merge_csv_rabbit.py
 
 def make_driver(headless=False):
     options = webdriver.ChromeOptions()
@@ -213,12 +165,6 @@ def main():
         # Wait for initial table
         wait_for_table_update(driver)
 
-        # Advanced options checkbox
-        # adv_checkbox = driver.find_element(By.ID, "data_advanced_options_checkbox")
-        # if not adv_checkbox.is_selected():
-        #     adv_checkbox.click()
-        # wait_for_table_update(driver)
-        # print("[*] 'Opzioni avanzate' checkbox checked")
         
         # Récupération de tous les jours
         day_select_elem = driver.find_element(By.ID, "days_select")
@@ -294,4 +240,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    #df.to_csv("mesures_netsens.csv", index=False, sep=",", encoding="utf-8-sig")
+    
