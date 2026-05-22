@@ -1,0 +1,72 @@
+[
+  {
+    "domain": ".netsens.it",
+    "expiry": 1759405018,
+    "httpOnly": false,
+    "name": "_gat_gtag_UA_8984376_3",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "1"
+  },
+  {
+    "domain": ".netsens.it",
+    "expiry": 1759491358,
+    "httpOnly": false,
+    "name": "_gid",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "GA1.2.2054335849.1759404958"
+  },
+  {
+    "domain": ".live.netsens.it",
+    "expiry": 1774956950,
+    "httpOnly": false,
+    "name": "ws23lc",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "9103cc482acc90d0c4a7ca5132eedc07"
+  },
+  {
+    "domain": ".netsens.it",
+    "expiry": 1793964958,
+    "httpOnly": false,
+    "name": "_ga",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "GA1.2.1284950055.1759404958"
+  },
+  {
+    "domain": ".netsens.it",
+    "expiry": 1793964957,
+    "httpOnly": false,
+    "name": "_ga_PVTYQJT1MQ",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "GS2.1.s1759404957$o1$g0$t1759404957$j60$l0$h0"
+  },
+  {
+    "domain": ".netsens.it",
+    "expiry": 1774956950,
+    "httpOnly": false,
+    "name": "ws23lc",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "9103cc482acc90d0c4a7ca5132eedc07"
+  },
+  {
+    "domain": "live.netsens.it",
+    "expiry": 1759407348,
+    "httpOnly": false,
+    "name": "PHPSESSID",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": true,
+    "value": "8au3ido39deu4r8gnjlt9ndv20"
+  }
+]

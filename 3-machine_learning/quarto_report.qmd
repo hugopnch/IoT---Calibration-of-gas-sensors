@@ -1,0 +1,351 @@
+---
+title: "Model Analysis"
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    fig-pos: "H"
+    keep-tex: false
+    include-in-header:
+      text: |
+        \usepackage{xcolor}
+
+---
+
+```{python}
+#| echo: false
+#| output: asis
+#| eval: true
+
+# ===============================
+# IMPORTS
+# ===============================
+
+from inspect import getsource
+from importlib import reload
+from tabulate import tabulate
+from IPython.display import display
+
+import workflow_main as wm
+reload(wm)
+
+# ===============================
+# UTILITAIRE POUR AFFICHER FONCTIONS
+# ===============================
+
+def show_function(func, flag_show = True, flag_run=False, *args):
+    if flag_show:
+        print("```python")
+        print(getsource(func))
+        print("```")
+
+    if flag_run:
+        print("\n Function print :\n")
+        return func(*args)
+
+# ===============================
+# CONFIGURATION
+# ===============================
+data, config_main, config_cluster, config_lc, config_gridsearch, config_scatter, config_plot = wm.build_config()
+
+# Flags
+flag_IR = wm.flag_IR
+flag_ER = wm.flag_ER
+
+# Fonctions
+import_data_IR = wm.import_data_IR
+assign_innova_point = wm.assign_innova_point
+import_data_ER = wm.import_data_ER
+
+stats_model = wm.stats_model
+```
+
+# Data analysis /Dataframe import and filters
+## DataFrame import and filters
+
+The data has been imported with the following(s) function(s):
+
+```{python}
+#| echo: false
+#| output: asis
+#| eval: true
+
+show_function(wm.build_df)
+if flag_IR:
+    show_function(import_data_IR)
+    show_function(assign_innova_point)
+
+if flag_ER:
+    show_function(import_data_ER)
+
+data = wm.build_df(data)
+#data = show_function(wm.build_df,flag_show = False, flag_run = True, *[data])
+#data["df"]=df
+#data["features_X"] = features_X
+```
+
+## Metadata
+```{python}
+#| echo: false
+#| output: asis
+#| eval: true
+
+table_df, list_features = stats_model(data, config_main)
+print(tabulate(table_df, headers=[], tablefmt='grid', showindex=False))
+#print(table_df.to_markdown(tablefmt="grid",index=False))
+
+for legend, features in list_features.items():
+    print(f"**{legend} :** {', '.join(features)}\n")
+    
+
+```
+
+
+
+
+```{python}
+#| echo: false
+#| output: asis
+#| eval: true
+
+# ============================
+# Data correlation and clustering
+# =========================== 
+
+if config_cluster["show"]:
+    print(f"\n# Data correlation and clustering\n")
+
+    # ============================
+    # Clustermap and cluster list
+    # =========================== 
+    print(f"\n## Clustermap and cluster list\n")
+    print(f"**The following section has been done with a threshold choosen of : {config_cluster["corr_threshold"]}**\n" )
+    # wm.clustermap_corr(data)
+    clusters, uncorr_list = wm.corr_clusters(data, config_cluster) 
+    for i, cluster in enumerate(clusters):
+        print(f"**cluster {i+1}:** {', '.join(cluster)} ; ")
+        
+    print("\n")
+
+    # ============================
+    # Features selection
+    # =========================== 
+    data["features_to_use"] = uncorr_list
+    print(f"\n## Features selection \n")
+    if config_cluster["show"]:
+        print(f"\n**Only the first items of the clusters is choosen for the rest of the study**\n")
+        print(f"**Choosen features_X:** {', '.join(uncorr_list)}\n")
+
+else:
+    data["features_to_use"] = data["features_X"]
+
+
+```
+
+
+# Model(s) analysis
+
+
+```{python}
+#| echo: false
+#| output: asis
+#| eval: true
+
+list_model, models_choosen, param_grid_choosen =wm.list_models, wm.models_choosen, wm.param_grid_choosen
+use_grouping = config_main["use_grouping"]
+
+if config_cluster["show"]:
+    print(f"\n## Metadata \n")
+    print(f"**Features_X:** {', '.join(uncorr_list)}\n")
+    print(f"**Len(Features_X):** {len(uncorr_list)}\n")
+    print(f"**Config Gridsearch:**{config_gridsearch}\n")
+
+comparison_rows = []
+# =================================
+# Legend table
+# ================================
+print(f"\n## Explanation legend tables\n")
+print(f"\n**Columns**\n")
+print(f"- rank: ranking regarding cross validation test \n")
+print(f"- train_cv: mean score train of the CV \n")
+print(f"- test_cv: mean score test of the CV \n") 
+print(f"- test: score on the testing dataset \n")
+print(f"- diff: test-test_cv \n")
+print(f"- r_test: test/test_cv \n")
+print(f"- r_train: train_cv/test_cv\n")
+
+print("**Colors**: \n ")
+print("[Orange] r\\_test < 0.95 (under performance of the test) \n")
+print("[Green] r\\_test > 1.05 (over performance of the test) \n") 
+print("[Red] r\\_train not in [0.95, 1.05] (gap between train/test) \n")
+
+print(f"\n## Repartition of train and test\n")
+wm.X_train_repartiton(data, config_main, config_gridsearch)
+
+
+
+
+for model_name in list_model:
+    config_main["model_name"] = model_name
+    config_main["model"]      = models_choosen[model_name]
+    config_main["param_grid"] = param_grid_choosen[model_name]
+
+    print(f"\n## Model : {model_name}\n")
+    if use_grouping:
+        # print("colonnes dupliquées:", data["df"].columns[data["df"].columns.duplicated()].tolist())
+        iterable = data["df"].groupby(data["feats_grouping"])
+        for group, df_sub in iterable:
+            data_sub = {**data, "df": df_sub}
+            group_str = group if isinstance(group, str) else "_".join(map(str, group))
+            data_sub["current_group"] = group_str
+            # =================================
+            # Gridsearch analysis
+            # ================================
+            print(f"\n### Gridsearch — Group: {group_str}\n")
+            
+            n_total = len(df_sub)
+            n_test  = int(n_total * config_main["len_test"])
+            n_train = n_total - n_test
+            print(f"**Len(group)** : {n_total}, **Len(training)** : {n_train}, **Len(test)** : {n_test} \n")
+
+            params_dict, best_params, top1_row, model_fit = wm.gridsearch_analysis(
+                data_sub, config_main, config_gridsearch
+            )
+            config_main["best_param"] = best_params
+            
+            
+            top1_row.insert(0, "Len total", n_total)
+            top1_row.insert(0, "Len test", n_test)
+            top1_row.insert(0, "Len training", n_train)
+            top1_row.insert(0, "group", group_str)   
+            top1_row.insert(0, "model", model_name)
+            comparison_rows.append(top1_row)
+            
+            # Hyperparemeters or Coefficients writting
+            first_val = next(iter(params_dict.values()))
+            if isinstance(first_val, dict):
+                    print(f"\n**Hyperparameters:**\n")
+            else:
+                    print(f"\n**Coefficients:**\n")
+            for rank, param in sorted(params_dict.items()):
+                if isinstance(param, dict):
+                    # CAS 2 gridsearch — dict de params
+                    print(f"Rank {rank}: {param}\n")
+                else:
+                    # CAS 1 linéaire — coefs individuels
+                    print(f"  {rank} = {param:.4f}\n")
+
+
+            # ================================
+            # Scatter plot
+            # ================================
+            if config_scatter["show"]:
+                print("\n### Scatter \n")
+                wm.scatter_plot(data,config_main,model_fit)
+
+            if config_scatter["show_res"]:
+                print(f"\n### Scatter residuals\n")
+                wm.scatter_res(data,config_main,model_fit)
+                
+
+            # ================================
+            # Learning curve
+            # ================================
+            print(f"\n### Learning curve — Group: {group_str}\n")
+            n_train_test = int(n_train*config_main["len_test"])
+            n_train_real = n_train - n_train_test 
+            print(f"**Len(group)** : {n_total}, **Len(training)** : {n_train}, \n")
+            print(f"**Len(training_real)** : {n_train_real}, **Len(test_of_training)** : {n_train_test}, **Len(test)** : {n_test} \n")
+            wm.create_learning_curve(data_sub,config_main,config_lc)
+
+    
+    else:
+        # ================================
+        # Gridsearch
+        # ================================
+        print(f"\n### Gridsearch \n")
+        params_dict, best_params, top1_row, model_fit = wm.gridsearch_analysis(
+                data, config_main, config_gridsearch
+            )
+        config_main["best_param"] = best_params
+
+        top1_row.insert(0, "model", model_name)
+        comparison_rows.append(top1_row)
+
+        # Hyperparemeters or Coefficients writting
+        first_val = next(iter(params_dict.values()))
+        if isinstance(first_val, dict):
+                print(f"\n**Hyperparameters:**\n")
+        else:
+                print(f"\n**Coefficients:**\n")
+        for rank, param in sorted(params_dict.items()):
+            if isinstance(param, dict):
+                # CAS 2 gridsearch — dict de params
+                print(f"Rank {rank}: {param}\n")
+            else:
+                # CAS 1 linéaire — coefs individuels
+                print(f"  {rank} = {param:.4f},")
+
+        # ================================
+        # Scatter plot
+        # ================================
+        if config_scatter["show"]:
+            print("\n### Scatter \n")
+            wm.scatter_plot(data,config_main,model_fit)
+
+        if config_scatter["show_res"]:
+            print(f"\n### Scatter residuals\n")
+            wm.scatter_res(data,config_main,model_fit)
+
+        # ================================
+        # Learning curve
+        # ================================
+        print(f"\n### Learning curve\n")
+        n_total = len(data["df"])
+        n_test  = int(n_total * config_main["len_test"])
+        n_train = n_total - n_test
+        n_train_test = int(n_train*config_main["len_test"])
+        n_train_real = n_train - n_train_test 
+        print(f"**Len(group)** : {n_total}, **Len(training)** : {n_train}, \n")
+        print(f"**Len(training_real)** : {n_train_real}, **Len(test_of_training)** : {n_train_test}, **Len(test)** : {n_test} \n")
+        wm.create_learning_curve(data,config_main,config_lc)
+
+# ====================
+# Sum-up table
+# ====================
+
+if config_gridsearch["sumup-table"]:
+    print(f"\n## Sumup-table\n")
+    wm.create_comparison_table(comparison_rows, use_grouping)
+
+```
+
+
+```{python}
+#| echo: false
+#| output: asis
+#| eval: true
+
+# =================
+# Plot
+# =================
+
+if config_plot["show"]:
+    print("\n# Plot \n")
+    ## Alone
+    if config_plot["flag_alone"]:
+        print(f"\n## Standalone plots\n")
+        tmp_flag = config_plot["flag_compare"]
+        config_plot["flag_compare"] = False
+        wm.plot_model(data, config_main, config_plot)
+        config_plot["flag_compare"] = tmp_flag
+
+    ## Compare
+    if config_plot["flag_compare"]:
+        print(f"\n## Compare plots\n")
+        tmp_flag = config_plot["flag_alone"]
+        config_plot["flag_alone"] = False
+        wm.plot_model(data, config_main, config_plot)
+        config_plot["flag_alone"] = tmp_flag
+
+```

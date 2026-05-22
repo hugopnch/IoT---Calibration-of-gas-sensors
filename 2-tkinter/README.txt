@@ -1,0 +1,1 @@
+To launch the graphical interface: open main.py and launch it. 
